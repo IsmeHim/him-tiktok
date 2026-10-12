@@ -85,11 +85,21 @@ export async function POST(request: NextRequest) {
       totalChunkCount: 1,
     });
 
-    if (initResponse.error || !initResponse.data?.upload_url) {
+    console.log('TikTok init post response:', JSON.stringify(initResponse));
+
+    const initData = (initResponse as any).data;
+    const uploadUrl = initData?.upload_url;
+    const publishId = initData?.publish_id;
+
+    if (!uploadUrl || (initResponse as any).error) {
+      const errObj = (initResponse as any).error || initResponse;
       const errorMsg =
-        initResponse.error?.message ||
-        'TikTok API error while initializing video upload to draft.';
+        errObj.message ||
+        errObj.error_description ||
+        JSON.stringify(errObj);
       
+      console.error('Failed to init TikTok video upload:', errorMsg);
+
       // Update record to FAILED
       postRecord.status = 'FAILED';
       postRecord.errorMessage = errorMsg;
@@ -98,14 +108,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: errorMsg,
-          code: initResponse.error?.code,
+          rawError: initResponse,
           postId: postRecord._id,
         },
         { status: 400 }
       );
     }
 
-    const { publish_id, upload_url } = initResponse.data;
+    const { publish_id, upload_url } = { publish_id: publishId, upload_url: uploadUrl };
 
     // 4. Upload binary chunk to TikTok upload_url
     const contentRange = `bytes 0-${videoSize - 1}/${videoSize}`;

@@ -87,12 +87,13 @@ export async function POST(request: NextRequest) {
 
     console.log('TikTok init post response:', JSON.stringify(initResponse));
 
-    const initData = (initResponse as any).data;
-    const uploadUrl = initData?.upload_url;
-    const publishId = initData?.publish_id;
+    const resObj = initResponse as any;
+    // TikTok may return upload_url at root level OR inside data object
+    const uploadUrl = resObj.data?.upload_url || resObj.upload_url;
+    const publishId = resObj.data?.publish_id || resObj.publish_id;
 
-    if (!uploadUrl || (initResponse as any).error) {
-      const errObj = (initResponse as any).error || initResponse;
+    if (!uploadUrl) {
+      const errObj = resObj.error || resObj;
       const errorMsg =
         errObj.message ||
         errObj.error_description ||

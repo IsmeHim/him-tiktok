@@ -56,35 +56,34 @@ export async function GET(request: NextRequest) {
     const tokenData = await exchangeCodeForToken(code, redirectUri, finalVerifier);
     console.log('TikTok token exchange result:', JSON.stringify(tokenData));
 
-    if (tokenData.error || !tokenData.data?.access_token) {
-      const errObj = (tokenData as any);
+    const resAny = tokenData as any;
+    // TikTok OAuth token endpoint returns fields at root level or under data:
+    const accessToken = resAny.access_token || resAny.data?.access_token;
+    const openId = resAny.open_id || resAny.data?.open_id;
+    const expiresIn = resAny.expires_in || resAny.data?.expires_in || 86400;
+    const refreshToken = resAny.refresh_token || resAny.data?.refresh_token;
+    const refreshExpiresIn = resAny.refresh_expires_in || resAny.data?.refresh_expires_in;
+    const scope = resAny.scope || resAny.data?.scope;
+
+    if (!accessToken || !openId) {
       const errMsg =
-        errObj.error_description ||
-        errObj.error?.message ||
-        errObj.message ||
-        (errObj.error ? JSON.stringify(errObj.error) : JSON.stringify(errObj));
+        resAny.error_description ||
+        resAny.error?.message ||
+        resAny.message ||
+        (resAny.error ? JSON.stringify(resAny.error) : JSON.stringify(resAny));
       console.error('TikTok token error response:', errMsg);
       dashboardUrl.searchParams.set('tiktok_error', errMsg);
       return NextResponse.redirect(dashboardUrl);
     }
 
-    const {
-      open_id,
-      access_token,
-      expires_in,
-      refresh_token,
-      refresh_expires_in,
-      scope,
-    } = tokenData.data;
-
     // Fetch user profile info from TikTok
-    const userInfo = await fetchTikTokUserInfo(access_token);
+    const userInfo = await fetchTikTokUserInfo(accessToken);
 
     await connectToDatabase();
 
-    const expiresAt = new Date(Date.now() + expires_in * 1000);
-    const refreshTokenExpiresAt = refresh_expires_in
-      ? new Date(Date.now() + refresh_expires_in * 1000)
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    const refreshTokenExpiresAt = refreshExpiresIn
+      ? new Date(Date.now() + refreshExpiresIn * 1000)
       : undefined;
 
     const scopesArray = typeof scope === 'string' ? scope.split(',') : (scope || []);
@@ -94,12 +93,12 @@ export async function GET(request: NextRequest) {
       { userId },
       {
         userId,
-        openId: open_id,
+        openId: openId,
         unionId: userInfo?.union_id || '',
         avatarUrl: userInfo?.avatar_url || userInfo?.avatar_url_100 || '',
         displayName: userInfo?.display_name || 'TikTok Creator',
-        accessToken: access_token,
-        refreshToken: refresh_token,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
         expiresAt,
         refreshTokenExpiresAt,
         scope: scopesArray,

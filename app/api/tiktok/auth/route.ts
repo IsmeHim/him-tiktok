@@ -24,21 +24,23 @@ export async function GET(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`;
     const redirectUri = `${appUrl}/api/tiktok/callback`;
 
-    // CSRF State parameter containing user ID and random token
-    const randomHex = crypto.randomBytes(16).toString('hex');
-    const statePayload = Buffer.from(
-      JSON.stringify({
-        userId: session.userId,
-        salt: randomHex,
-      })
-    ).toString('base64url');
-
     // PKCE (Proof Key for Code Exchange) required by TikTok OAuth v2
     const codeVerifier = crypto.randomBytes(32).toString('base64url');
     const codeChallenge = crypto
       .createHash('sha256')
       .update(codeVerifier)
       .digest('base64url');
+
+    // CSRF State parameter containing user ID, random token AND codeVerifier
+    // (This guarantees codeVerifier is preserved even if cookies are dropped during 3rd party redirect)
+    const randomHex = crypto.randomBytes(16).toString('hex');
+    const statePayload = Buffer.from(
+      JSON.stringify({
+        userId: session.userId,
+        salt: randomHex,
+        verifier: codeVerifier,
+      })
+    ).toString('base64url');
 
     // Scopes needed for profile and video draft uploads
     const scope = 'user.info.basic,video.upload';

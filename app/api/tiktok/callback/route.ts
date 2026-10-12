@@ -27,14 +27,17 @@ export async function GET(request: NextRequest) {
   try {
     // Verify user session
     let userId: string | null = null;
+    let stateVerifier: string | undefined;
     const session = await getSessionFromRequest(request);
     if (session) {
       userId = session.userId;
-    } else if (state) {
-      // Decode user from state if cookie was stripped across external redirect
+    }
+    
+    if (state) {
       try {
         const decodedState = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-        userId = decodedState.userId;
+        if (!userId) userId = decodedState.userId;
+        stateVerifier = decodedState.verifier;
       } catch (e) {
         console.error('Failed to parse state:', e);
       }
@@ -46,11 +49,15 @@ export async function GET(request: NextRequest) {
     }
 
     const redirectUri = `${appUrl}/api/tiktok/callback`;
-    const codeVerifier = request.cookies.get('tiktok_code_verifier')?.value;
-    const tokenData = await exchangeCodeForToken(code, redirectUri, codeVerifier);
+    const cookieVerifier = request.cookies.get('tiktok_code_verifier')?.value;
+    const finalVerifier = cookieVerifier || stateVerifier;
+
+    console.log('Exchanging TikTok token with redirectUri:', redirectUri, 'verifier present:', !!finalVerifier);
+    const tokenData = await exchangeCodeForToken(code, redirectUri, finalVerifier);
+    console.log('TikTok token exchange result:', JSON.stringify(tokenData));
 
     if (tokenData.error || !tokenData.data?.access_token) {
-      const errMsg = tokenData.error?.message || 'Failed to exchange authorization code for access token';
+      const errMsg = tokenData.error?.message || (tokenData.error ? JSON.stringify(tokenData.error) : 'Failed to exchange authorization code for access token');
       dashboardUrl.searchParams.set('tiktok_error', errMsg);
       return NextResponse.redirect(dashboardUrl);
     }

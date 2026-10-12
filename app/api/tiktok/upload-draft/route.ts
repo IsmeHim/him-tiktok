@@ -77,12 +77,16 @@ export async function POST(request: NextRequest) {
     // 2. Ensure valid TikTok Access Token (refreshes if needed)
     const validAccessToken = await getValidTikTokAccessToken(account);
 
-    // 3. Initialize video upload via TikTok Content Posting API
+    // 3. Initialize video upload via TikTok Content Posting API with Title & Hashtags
     const initResponse = await initializeInboxVideoPost({
       accessToken: validAccessToken,
       videoSize,
       chunkSize: videoSize,
       totalChunkCount: 1,
+      title: caption,
+      disableComment: !allowComment,
+      disableDuet: !allowDuet,
+      isAigc: isAigc,
     });
 
     console.log('TikTok init post response:', JSON.stringify(initResponse));

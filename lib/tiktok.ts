@@ -196,10 +196,15 @@ export async function initializeInboxVideoPost(params: {
   videoSize: number;
   chunkSize?: number;
   totalChunkCount?: number;
+  title?: string;
+  disableComment?: boolean;
+  disableDuet?: boolean;
+  disableStitch?: boolean;
+  isAigc?: boolean;
 }): Promise<TikTokInitPostResponse> {
   const url = 'https://open.tiktokapis.com/v2/post/publish/inbox/video/init/';
 
-  const payload = {
+  const payload: any = {
     source_info: {
       source: 'FILE_UPLOAD',
       video_size: params.videoSize,
@@ -207,6 +212,16 @@ export async function initializeInboxVideoPost(params: {
       total_chunk_count: params.totalChunkCount || 1,
     },
   };
+
+  if (params.title) {
+    payload.post_info = {
+      title: params.title,
+      disable_comment: params.disableComment ?? false,
+      disable_duet: params.disableDuet ?? false,
+      disable_stitch: params.disableStitch ?? false,
+      is_aigc: params.isAigc ?? false,
+    };
+  }
 
   const response = await fetch(url, {
     method: 'POST',

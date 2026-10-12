@@ -300,12 +300,21 @@ export default function VideoDraftUploader({
 
               {/* Quick Hashtag Chips */}
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {['#TikTok', '#Cyberpunk', '#TechInnovation', '#AI', '#ViralDraft'].map((tag) => (
+                {[
+                  '#รีวิวเสื้อผ้าแฟชั่น',
+                  '#เสื้อแขนยาว',
+                  '#เสื้อใส่สบาย',
+                  '#foryou',
+                  '#fyp',
+                  '#TikTokแฟชั่น',
+                  '#แต่งตัว',
+                  '#พิกัดเสื้อผ้า',
+                ].map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => setCaption((prev) => (prev ? `${prev} ${tag}` : tag))}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-cyan-300 font-mono transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 hover:border-[#00f2fe]/40 border border-white/10 text-[11px] text-cyan-300 font-mono transition cursor-pointer active:scale-95"
                   >
                     {tag}
                   </button>

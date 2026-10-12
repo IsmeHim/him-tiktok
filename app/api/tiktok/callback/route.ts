@@ -57,7 +57,13 @@ export async function GET(request: NextRequest) {
     console.log('TikTok token exchange result:', JSON.stringify(tokenData));
 
     if (tokenData.error || !tokenData.data?.access_token) {
-      const errMsg = tokenData.error?.message || (tokenData.error ? JSON.stringify(tokenData.error) : 'Failed to exchange authorization code for access token');
+      const errObj = (tokenData as any);
+      const errMsg =
+        errObj.error_description ||
+        errObj.error?.message ||
+        errObj.message ||
+        (errObj.error ? JSON.stringify(errObj.error) : JSON.stringify(errObj));
+      console.error('TikTok token error response:', errMsg);
       dashboardUrl.searchParams.set('tiktok_error', errMsg);
       return NextResponse.redirect(dashboardUrl);
     }

@@ -301,6 +301,8 @@ export default function VideoDraftUploader({
               {/* Quick Hashtag Chips */}
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {[
+                  '#เสื้อกีฬาแฟชั่น',
+                  '#เผื่อใครถามว่าซื้อไหน',
                   '#รีวิวเสื้อผ้าแฟชั่น',
                   '#เสื้อแขนยาว',
                   '#เสื้อใส่สบาย',

@@ -6,6 +6,7 @@ import { Post } from '@/models/Post';
 import {
   getValidTikTokAccessToken,
   initializeInboxVideoPost,
+  initializeDirectVideoPost,
   uploadVideoChunk,
 } from '@/lib/tiktok';
 
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const videoFile = formData.get('video') as File | null;
     const caption = (formData.get('caption') as string) || '';
+    const postMode = (formData.get('postMode') as string) || 'DIRECT'; // 'DIRECT' (Direct Post with caption) or 'INBOX' (Draft)
+    const privacyLevel = (formData.get('privacyLevel') as string) || 'SELF_ONLY'; // 'SELF_ONLY' (Private) or 'PUBLIC_TO_EVERYONE'
     const allowComment = formData.get('allowComment') === 'true';
     const allowDuet = formData.get('allowDuet') === 'true';
     const isAigc = formData.get('isAigc') === 'true';
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest) {
       videoFileName: videoFile.name,
       videoFileSize: videoSize,
       status: 'PROCESSING',
+      privacyLevel: privacyLevel,
       disableComment: !allowComment,
       disableDuet: !allowDuet,
       isAigc: isAigc,
@@ -77,17 +81,34 @@ export async function POST(request: NextRequest) {
     // 2. Ensure valid TikTok Access Token (refreshes if needed)
     const validAccessToken = await getValidTikTokAccessToken(account);
 
-    // 3. Initialize video upload via TikTok Content Posting API with Title & Hashtags
-    const initResponse = await initializeInboxVideoPost({
-      accessToken: validAccessToken,
-      videoSize,
-      chunkSize: videoSize,
-      totalChunkCount: 1,
-      title: caption,
-      disableComment: !allowComment,
-      disableDuet: !allowDuet,
-      isAigc: isAigc,
-    });
+    // 3. Initialize video upload based on postMode
+    let initResponse: any;
+
+    if (postMode === 'DIRECT') {
+      // Direct Post endpoint: TikTok applies title & caption directly to the video!
+      initResponse = await initializeDirectVideoPost({
+        accessToken: validAccessToken,
+        videoSize,
+        title: caption,
+        privacyLevel: privacyLevel,
+        disableComment: !allowComment,
+        disableDuet: !allowDuet,
+        disableStitch: !allowDuet,
+        isAigc: isAigc,
+      });
+    } else {
+      // Inbox Mode: sends video as raw draft into user's Inbox
+      initResponse = await initializeInboxVideoPost({
+        accessToken: validAccessToken,
+        videoSize,
+        chunkSize: videoSize,
+        totalChunkCount: 1,
+        title: caption,
+        disableComment: !allowComment,
+        disableDuet: !allowDuet,
+        isAigc: isAigc,
+      });
+    }
 
     console.log('TikTok init post response:', JSON.stringify(initResponse));
 

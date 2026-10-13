@@ -29,6 +29,8 @@ export default function VideoDraftUploader({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
+  const [postMode, setPostMode] = useState<'DIRECT' | 'INBOX'>('DIRECT'); // DIRECT publishes with caption, INBOX sends raw draft
+  const [privacyLevel, setPrivacyLevel] = useState<'SELF_ONLY' | 'PUBLIC_TO_EVERYONE'>('SELF_ONLY'); // SELF_ONLY (Private) for adding showcase basket
   const [allowComment, setAllowComment] = useState(true);
   const [allowDuet, setAllowDuet] = useState(true);
   const [isAigc, setIsAigc] = useState(false);
@@ -116,6 +118,8 @@ export default function VideoDraftUploader({
       const formData = new FormData();
       formData.append('video', videoFile);
       formData.append('caption', caption);
+      formData.append('postMode', postMode);
+      formData.append('privacyLevel', privacyLevel);
       formData.append('allowComment', String(allowComment));
       formData.append('allowDuet', String(allowDuet));
       formData.append('isAigc', String(isAigc));
@@ -324,8 +328,95 @@ export default function VideoDraftUploader({
               </div>
             </div>
 
+            {/* Mode Selection: Direct Post (with captions) vs Inbox (Draft) */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                รูปแบบการส่งวิดีโอ (Publish Mode)
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPostMode('DIRECT')}
+                  className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                    postMode === 'DIRECT'
+                      ? 'bg-gradient-to-br from-[#fe2c55]/20 to-[#00f2fe]/10 border-[#00f2fe] shadow-lg shadow-[#00f2fe]/10'
+                      : 'bg-white/5 border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center space-x-1.5">
+                      <span>⚡ โพสต์ทันที (พร้อมแคปชั่น)</span>
+                    </span>
+                    <span className={`w-3 h-3 rounded-full border ${postMode === 'DIRECT' ? 'bg-[#00f2fe] border-[#00f2fe]' : 'border-slate-500'}`} />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1">
+                    แคปชั่น & แฮชแท็กติดไปด้วย 100% เหมาะสำหรับปักตะกร้าต่อ
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPostMode('INBOX')}
+                  className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                    postMode === 'INBOX'
+                      ? 'bg-gradient-to-br from-[#fe2c55]/20 to-[#00f2fe]/10 border-[#fe2c55] shadow-lg shadow-[#fe2c55]/10'
+                      : 'bg-white/5 border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center space-x-1.5">
+                      <span>📥 ส่งเข้ากล่องร่าง (Inbox Draft)</span>
+                    </span>
+                    <span className={`w-3 h-3 rounded-full border ${postMode === 'INBOX' ? 'bg-[#fe2c55] border-[#fe2c55]' : 'border-slate-500'}`} />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1">
+                    ส่งเป็นไฟล์ดิบเข้า Inbox แจ้งเตือนในแอปเพื่อตัดต่อต่อ
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Privacy Level (Active when in DIRECT mode) */}
+            {postMode === 'DIRECT' && (
+              <div className="p-3.5 rounded-xl glass-panel-subtle space-y-2 border border-cyan-500/20 bg-cyan-950/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-white">ระดับความเป็นส่วนตัว (Privacy Level)</div>
+                    <div className="text-[11px] text-slate-400">เลือก &quot;เฉพาะฉัน (Private)&quot; เพื่อเข้าไปปักตะกร้าสินค้าก่อนเปิดสาธารณะ</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyLevel('SELF_ONLY')}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                      privacyLevel === 'SELF_ONLY'
+                        ? 'bg-[#00f2fe]/20 text-[#00f2fe] border-[#00f2fe]'
+                        : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    🔒 เฉพาะฉัน (Private / Only Me)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyLevel('PUBLIC_TO_EVERYONE')}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                      privacyLevel === 'PUBLIC_TO_EVERYONE'
+                        ? 'bg-[#fe2c55]/20 text-[#fe2c55] border-[#fe2c55]'
+                        : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    🌍 สาธารณะ (Public)
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Toggle Switches */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
                 การตั้งค่าการโต้ตอบ (Interactions)
               </label>
@@ -420,7 +511,11 @@ export default function VideoDraftUploader({
                 ) : (
                   <>
                     <Send className="w-4 h-4 text-cyan-300" />
-                    <span>ส่งวิดีโอเข้าสู่ TikTok Draft (Inbox)</span>
+                    <span>
+                      {postMode === 'DIRECT'
+                        ? '🚀 โพสต์ลง TikTok ทันที (พร้อมแคปชั่น)'
+                        : '📥 ส่งวิดีโอเข้าสู่ TikTok Draft (Inbox)'}
+                    </span>
                   </>
                 )}
               </button>

@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
       })
     ).toString('base64url');
 
-    // Scopes needed for profile and video draft uploads
-    const scope = 'user.info.basic,video.upload';
+    // Scopes needed for profile, video draft uploads AND direct posting
+    const scope = 'user.info.basic,video.upload,video.publish';
 
     // TikTok OAuth 2.0 Authorization URL
     const tiktokAuthUrl = new URL('https://www.tiktok.com/v2/auth/authorize/');

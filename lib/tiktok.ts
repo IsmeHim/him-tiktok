@@ -290,14 +290,29 @@ export async function uploadVideoChunk(params: {
   videoBuffer: Buffer;
   contentRange: string; // e.g. "bytes 0-1048575/1048576"
 }): Promise<Response> {
-  // Convert Node Buffer to Uint8Array for browser/Next.js fetch compatibility
   const uint8 = new Uint8Array(params.videoBuffer);
-  return await fetch(params.uploadUrl, {
+  const headers: Record<string, string> = {
+    'Content-Range': params.contentRange,
+    'Content-Type': 'video/mp4',
+    'Content-Length': String(uint8.byteLength),
+  };
+
+  // Attempt upload with 1 automatic retry if CloudFront returns temporary 503
+  let res = await fetch(params.uploadUrl, {
     method: 'PUT',
-    headers: {
-      'Content-Range': params.contentRange,
-      'Content-Type': 'video/mp4',
-    },
+    headers,
     body: uint8,
   });
+
+  if (res.status === 503 || res.status === 504 || res.status === 502) {
+    console.warn(`TikTok upload received ${res.status}, retrying once after 1s...`);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    res = await fetch(params.uploadUrl, {
+      method: 'PUT',
+      headers,
+      body: uint8,
+    });
+  }
+
+  return res;
 }
